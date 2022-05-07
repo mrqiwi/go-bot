@@ -3,6 +3,7 @@ package telegram
 import (
 	"log"
 	"strings"
+	"time"
 
 	"go-bot/internal/app/transmission"
 	HTTP "go-bot/internal/app/transport/http"
@@ -73,6 +74,10 @@ func (ctrl TelegramController) EventLoop() error {
 				continue
 			}
 		} else {
+			if ctrl.oldMessage(update.Message.Date) {
+				continue
+			}
+
 			ctrl.HandleMessage(strings.ToLower(update.Message.Text), update.Message.Chat.ID)
 		}
 	}
@@ -85,6 +90,19 @@ func (ctrl TelegramController) verifyChatID(chatID int64) bool {
 		if id == chatID {
 			return true
 		}
+	}
+
+	return false
+}
+
+func (ctrl TelegramController) oldMessage(timestamp int) bool {
+	const waitTime = 2
+
+	msgTime := time.Unix(int64(timestamp), 0)
+	nowTime := time.Now()
+
+	if nowTime.Sub(msgTime).Minutes() > waitTime {
+		return true
 	}
 
 	return false
