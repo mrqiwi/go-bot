@@ -7,6 +7,7 @@ import (
 	HTTP "go-bot/internal/app/transport/http"
 	"go-bot/internal/app/transport/telegram"
 	"go-bot/internal/app/transport/vk"
+	"go-bot/internal/app/transmission"
 	"go-bot/internal/app/usecase"
 
 	"github.com/SevereCloud/vksdk/v2/api"
@@ -23,10 +24,18 @@ func main() {
 		log.Fatal(err)
 	}
 
+	transClient := transmission.TranmissionClient()
 	httpClient := HTTP.NewHTTPClient()
 	commands := usecase.NewCommandProvider()
-	teleController := telegram.NewTelegramController(teleBot, commands, httpClient, config.TelegramToken, config.DownloadsPath)
 	vkController := vk.NewVkController(api.NewVK(config.VKToken), commands)
+	teleController := telegram.NewTelegramController(
+		teleBot,
+		commands,
+		httpClient,
+		config.TelegramToken,
+		config.DownloadsPath,
+		transClient,
+	)
 
 	errChannel := make(chan error)
 

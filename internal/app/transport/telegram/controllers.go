@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"go-bot/internal/app/transmission"
 	HTTP "go-bot/internal/app/transport/http"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
@@ -20,6 +21,7 @@ type TelegramController struct {
 	httpClient   HTTP.HTTPClient
 	token        string
 	downloadPath string
+	transClient  transmission.Transmission
 }
 
 func NewTelegramController(
@@ -28,6 +30,7 @@ func NewTelegramController(
 	httpClient HTTP.HTTPClient,
 	token string,
 	downloadPath string,
+	transClient transmission.Transmission,
 ) TelegramController {
 	return TelegramController{
 		bot:          bot,
@@ -35,6 +38,7 @@ func NewTelegramController(
 		httpClient:   httpClient,
 		token:        token,
 		downloadPath: downloadPath,
+		transClient:  transClient,
 	}
 }
 
