@@ -21,9 +21,9 @@ func (ctrl *TelegramController) DownloadTorrent(msg *tgbotapi.Message) error {
 		return err
 	}
 
-	path := fmt.Sprintf("%s/%s", ctrl.downloadPath, msg.Document.FileName)
+	path := fmt.Sprintf("%s/%s", ctrl.settings.DownloadPath, msg.Document.FileName)
 
-	err = ctrl.httpClient.DownloadFile(path, file.Link(ctrl.token))
+	err = ctrl.httpClient.DownloadFile(path, file.Link(ctrl.settings.Token))
 	if err != nil {
 		return err
 	}

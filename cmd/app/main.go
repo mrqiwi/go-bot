@@ -4,10 +4,10 @@ import (
 	"log"
 
 	"go-bot/internal/app/appconfig"
+	"go-bot/internal/app/transmission"
 	HTTP "go-bot/internal/app/transport/http"
 	"go-bot/internal/app/transport/telegram"
 	"go-bot/internal/app/transport/vk"
-	"go-bot/internal/app/transmission"
 	"go-bot/internal/app/usecase"
 
 	"github.com/SevereCloud/vksdk/v2/api"
@@ -29,11 +29,14 @@ func main() {
 	commands := usecase.NewCommandProvider()
 	vkController := vk.NewVkController(api.NewVK(config.VKToken), commands)
 	teleController := telegram.NewTelegramController(
+		telegram.Settings{
+			Token:        config.TelegramToken,
+			DownloadPath: config.DownloadsPath,
+			ChatIDs:      config.ChatIDs,
+		},
 		teleBot,
 		commands,
 		httpClient,
-		config.TelegramToken,
-		config.DownloadsPath,
 		transClient,
 	)
 

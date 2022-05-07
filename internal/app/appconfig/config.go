@@ -5,9 +5,10 @@ import (
 )
 
 type Config struct {
-	VKToken       string `envconfig:"vktoken"`
-	TelegramToken string `envconfig:"teletoken"`
-	DownloadsPath string `envconfig:"downloads" default:"/media/downloads"`
+	VKToken       string  `envconfig:"vktoken"`
+	TelegramToken string  `envconfig:"teletoken"`
+	DownloadsPath string  `envconfig:"downloads" default:"/media/downloads"`
+	ChatIDs       []int64 `envconfig:"chat_ids"`
 }
 
 func ReadConfig() (Config, error) {

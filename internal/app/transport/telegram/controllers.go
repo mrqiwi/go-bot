@@ -16,33 +16,36 @@ type Commander interface {
 }
 
 type TelegramController struct {
-	bot          *tgbotapi.BotAPI
-	commander    Commander
-	httpClient   HTTP.HTTPClient
-	token        string
-	downloadPath string
-	transClient  transmission.Transmission
+	settings    Settings
+	bot         *tgbotapi.BotAPI
+	commander   Commander
+	httpClient  HTTP.HTTPClient
+	transClient transmission.Transmission
+}
+
+type Settings struct {
+	Token        string
+	DownloadPath string
+	ChatIDs      []int64
 }
 
 func NewTelegramController(
+	settings Settings,
 	bot *tgbotapi.BotAPI,
 	commander Commander,
 	httpClient HTTP.HTTPClient,
-	token string,
-	downloadPath string,
 	transClient transmission.Transmission,
 ) TelegramController {
 	return TelegramController{
-		bot:          bot,
-		commander:    commander,
-		httpClient:   httpClient,
-		token:        token,
-		downloadPath: downloadPath,
-		transClient:  transClient,
+		settings:    settings,
+		bot:         bot,
+		commander:   commander,
+		httpClient:  httpClient,
+		transClient: transClient,
 	}
 }
 
-func (ctrl *TelegramController) EventLoop() error {
+func (ctrl TelegramController) EventLoop() error {
 	updates, err := ctrl.bot.GetUpdatesChan(tgbotapi.UpdateConfig{
 		Offset:  0,
 		Limit:   0,
@@ -58,6 +61,11 @@ func (ctrl *TelegramController) EventLoop() error {
 			continue
 		}
 
+		if !ctrl.verifyChatID(update.Message.Chat.ID) {
+			log.Printf("Unknown user: %d", update.Message.Chat.ID)
+			continue
+		}
+
 		if update.Message.Document != nil {
 			err = ctrl.HandleDocument(update.Message)
 			if err != nil {
@@ -70,4 +78,14 @@ func (ctrl *TelegramController) EventLoop() error {
 	}
 
 	return nil
+}
+
+func (ctrl TelegramController) verifyChatID(chatID int64) bool {
+	for _, id := range ctrl.settings.ChatIDs {
+		if id == chatID {
+			return true
+		}
+	}
+
+	return false
 }
