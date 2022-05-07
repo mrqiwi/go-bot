@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	golang.org/x/text v0.3.5 // indirect
 )

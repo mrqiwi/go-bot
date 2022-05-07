@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
-	"os"
 
+	"go-bot/internal/app/appconfig"
 	HTTP "go-bot/internal/app/transport/http"
 	"go-bot/internal/app/transport/telegram"
 	"go-bot/internal/app/transport/vk"
@@ -13,30 +13,20 @@ import (
 )
 
 func main() {
-	downloadPath := os.Getenv("DOWNLOADS")
-	if downloadPath == "" {
-		log.Fatal("Download path is not set")
+	config, err := appconfig.ReadConfig()
+	if err != nil {
+		log.Fatalf("cannot read the app appconfig: %s", err)
 	}
 
-	teleToken := os.Getenv("TELETOKEN")
-	if teleToken == "" {
-		log.Fatal("Telegram token is empty")
-	}
-
-	teleBot, err := telegram.TelegramApiInit(teleToken)
+	teleBot, err := telegram.TelegramApiInit(config.TelegramToken)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	vkToken := os.Getenv("VKTOKEN")
-	if vkToken == "" {
-		log.Fatal("VK token is empty")
-	}
-
 	httpClient := HTTP.NewHTTPClient()
 	commands := usecase.NewCommandProvider()
-	teleController := telegram.NewTelegramController(teleBot, commands, httpClient, teleToken, downloadPath)
-	vkController := vk.NewVkController(api.NewVK(vkToken), commands)
+	teleController := telegram.NewTelegramController(teleBot, commands, httpClient, config.TelegramToken, config.DownloadsPath)
+	vkController := vk.NewVkController(api.NewVK(config.VKToken), commands)
 
 	errChannel := make(chan error)
 
