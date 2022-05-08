@@ -8,3 +8,7 @@ build:
 .PHONY: run
 run:
 	./${BUILD_DIR}${PROJECTNAME}
+
+.PHONY: update
+update: build
+	cp ./${BUILD_DIR}${PROJECTNAME} /usr/sbin/gobot
