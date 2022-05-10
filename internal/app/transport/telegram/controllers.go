@@ -1,7 +1,7 @@
 package telegram
 
 import (
-	"log"
+	"go.uber.org/zap"
 	"strings"
 	"time"
 
@@ -18,6 +18,7 @@ type Commander interface {
 
 type TelegramController struct {
 	settings    Settings
+	logger      *zap.SugaredLogger
 	bot         *tgbotapi.BotAPI
 	commander   Commander
 	httpClient  HTTP.HTTPClient
@@ -32,6 +33,7 @@ type Settings struct {
 
 func NewTelegramController(
 	settings Settings,
+	logger *zap.SugaredLogger,
 	bot *tgbotapi.BotAPI,
 	commander Commander,
 	httpClient HTTP.HTTPClient,
@@ -39,6 +41,7 @@ func NewTelegramController(
 ) TelegramController {
 	return TelegramController{
 		settings:    settings,
+		logger:      logger,
 		bot:         bot,
 		commander:   commander,
 		httpClient:  httpClient,
@@ -53,7 +56,7 @@ func (ctrl TelegramController) EventLoop() error {
 		Timeout: 60,
 	})
 	if err != nil {
-		log.Printf("Cannot get update channel: %s", err)
+		ctrl.logger.Errorf("Cannot get update channel: %s", err)
 		return err
 	}
 
@@ -63,7 +66,7 @@ func (ctrl TelegramController) EventLoop() error {
 		}
 
 		if !ctrl.verifyChatID(update.Message.Chat.ID) {
-			log.Printf("Unknown user: %d", update.Message.Chat.ID)
+			ctrl.logger.Infof("Unknown user: %d", update.Message.Chat.ID)
 			continue
 		}
 
@@ -81,7 +84,7 @@ func (ctrl TelegramController) HandleMessage(msg *tgbotapi.Message) {
 	if msg.Document != nil {
 		err := ctrl.HandleDocument(msg)
 		if err != nil {
-			log.Printf("Handle document: %s", err)
+			ctrl.logger.Errorf("Handle document: %s", err)
 			return
 		}
 	}
@@ -97,7 +100,7 @@ func (ctrl *TelegramController) SendMessage(chatID int64, text string) {
 
 	_, err := ctrl.bot.Send(msg)
 	if err != nil {
-		log.Printf("Cannot send message: %s", err)
+		ctrl.logger.Errorf("Cannot send message: %s", err)
 	}
 }
 

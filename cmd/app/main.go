@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"go-bot/internal/app/appconfig"
+	"go-bot/internal/app/logging"
 	"go-bot/internal/app/transmission"
 	HTTP "go-bot/internal/app/transport/http"
 	"go-bot/internal/app/transport/telegram"
@@ -14,26 +15,32 @@ import (
 )
 
 func main() {
-	config, err := appconfig.ReadConfig()
+	logger, loggerCleanup, err := logging.InitLogger()
 	if err != nil {
-		log.Fatalf("cannot read the app appconfig: %s", err)
+		log.Fatalf("init logger failed: %s", err)
 	}
 
-	teleBot, err := telegram.TelegramApiInit(config.TelegramToken)
+	config, err := appconfig.ReadConfig()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalf("cannot read the app appconfig: %s", err)
+	}
+
+	teleBot, err := telegram.TelegramApiInit(config.TelegramToken, logger)
+	if err != nil {
+		logger.Fatalf("cannot init telegram api: %s", err)
 	}
 
 	transClient := transmission.TranmissionClient()
 	httpClient := HTTP.NewHTTPClient()
 	commands := usecase.NewCommandProvider()
-	vkController := vk.NewVkController(api.NewVK(config.VKToken), commands)
+	vkController := vk.NewVkController(logger, api.NewVK(config.VKToken), commands)
 	teleController := telegram.NewTelegramController(
 		telegram.Settings{
 			Token:        config.TelegramToken,
 			DownloadPath: config.DownloadsPath,
 			ChatIDs:      config.ChatIDs,
 		},
+		logger,
 		teleBot,
 		commands,
 		httpClient,
@@ -56,5 +63,6 @@ func main() {
 		}
 	}(errChannel)
 
-	log.Fatal(<-errChannel)
+	log.Print(<-errChannel)
+	loggerCleanup()
 }

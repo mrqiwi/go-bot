@@ -1,9 +1,5 @@
 package telegram
 
-import (
-	"log"
-)
-
 func (ctrl *TelegramController) HandleText(text string, chatID int64) {
 	switch text {
 	case "reset", "reboot", "restart", "перезагрузка", "рестарт":
@@ -18,7 +14,7 @@ func (ctrl *TelegramController) HandleText(text string, chatID int64) {
 func (ctrl *TelegramController) Reboot(chatID int64) {
 	err := ctrl.commander.Reboot()
 	if err != nil {
-		log.Printf("Cannot run reboot: %s", err)
+		ctrl.logger.Infof("Cannot run reboot: %s", err)
 		return
 	}
 
@@ -28,7 +24,7 @@ func (ctrl *TelegramController) Reboot(chatID int64) {
 func (ctrl *TelegramController) Poweroff(chatID int64) {
 	err := ctrl.commander.Poweroff()
 	if err != nil {
-		log.Printf("Cannot run poweroff: %s", err)
+		ctrl.logger.Infof("Cannot run poweroff: %s", err)
 		return
 	}
 

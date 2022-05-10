@@ -2,7 +2,7 @@ package vk
 
 import (
 	"context"
-	"log"
+	"go.uber.org/zap"
 	"strings"
 
 	"github.com/SevereCloud/vksdk/v2/api"
@@ -17,12 +17,14 @@ type Commander interface {
 }
 
 type VkController struct {
+	logger    *zap.SugaredLogger
 	bot       *api.VK
 	commander Commander
 }
 
-func NewVkController(bot *api.VK, commander Commander) VkController {
+func NewVkController(logger *zap.SugaredLogger, bot *api.VK, commander Commander) VkController {
 	return VkController{
+		logger:    logger,
 		bot:       bot,
 		commander: commander,
 	}
@@ -40,12 +42,12 @@ func (ctrl *VkController) EventLoop() error {
 	}
 
 	lp.MessageNew(func(_ context.Context, obj events.MessageNewObject) {
-		log.Printf("%d: %s", obj.Message.PeerID, obj.Message.Text)
+		ctrl.logger.Infof("%d: %s", obj.Message.PeerID, obj.Message.Text)
 
 		ctrl.handleMessage(strings.ToLower(obj.Message.Text), obj.Message.PeerID)
 	})
 
-	log.Println("Start Long Poll")
+	ctrl.logger.Info("Start Long Poll")
 
 	err = lp.Run()
 	if err != nil {
@@ -58,7 +60,7 @@ func (ctrl *VkController) EventLoop() error {
 func (ctrl *VkController) Reboot(peerID int) {
 	err := ctrl.commander.Reboot()
 	if err != nil {
-		log.Printf("Cannot run reboot: %s", err)
+		ctrl.logger.Errorf("Cannot run reboot: %s", err)
 		return
 	}
 
@@ -68,7 +70,7 @@ func (ctrl *VkController) Reboot(peerID int) {
 func (ctrl *VkController) Poweroff(peerID int) {
 	err := ctrl.commander.Poweroff()
 	if err != nil {
-		log.Printf("Cannot run poweroff: %s", err)
+		ctrl.logger.Errorf("Cannot run poweroff: %s", err)
 		return
 	}
 
@@ -94,6 +96,6 @@ func (ctrl *VkController) sendMessage(peerID int, text string) {
 
 	_, err := ctrl.bot.MessagesSend(b.Params)
 	if err != nil {
-		log.Printf("Cannot send message: %s", err)
+		ctrl.logger.Errorf("Cannot send message: %s", err)
 	}
 }
