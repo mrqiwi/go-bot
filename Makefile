@@ -6,7 +6,7 @@ build:
 	go build -o ${BUILD_DIR}${PROJECTNAME} cmd/app/main.go
 
 .PHONY: run
-run:
+run: build
 	./${BUILD_DIR}${PROJECTNAME}
 
 .PHONY: update

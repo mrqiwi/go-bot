@@ -67,22 +67,38 @@ func (ctrl TelegramController) EventLoop() error {
 			continue
 		}
 
-		if update.Message.Document != nil {
-			err = ctrl.HandleDocument(update.Message)
-			if err != nil {
-				log.Printf("Handle document: %s", err)
-				continue
-			}
-		} else {
-			if ctrl.oldMessage(update.Message.Date) {
-				continue
-			}
-
-			ctrl.HandleMessage(strings.ToLower(update.Message.Text), update.Message.Chat.ID)
+		if oldMessage(update.Message.Date) {
+			continue
 		}
+
+		ctrl.HandleMessage(update.Message)
 	}
 
 	return nil
+}
+
+func (ctrl TelegramController) HandleMessage(msg *tgbotapi.Message) {
+	if msg.Document != nil {
+		err := ctrl.HandleDocument(msg)
+		if err != nil {
+			log.Printf("Handle document: %s", err)
+			return
+		}
+	}
+
+	if msg.Text != "" {
+		ctrl.HandleText(strings.ToLower(msg.Text), msg.Chat.ID)
+		return
+	}
+}
+
+func (ctrl *TelegramController) SendMessage(chatID int64, text string) {
+	msg := tgbotapi.NewMessage(chatID, text)
+
+	_, err := ctrl.bot.Send(msg)
+	if err != nil {
+		log.Printf("Cannot send message: %s", err)
+	}
 }
 
 func (ctrl TelegramController) verifyChatID(chatID int64) bool {
@@ -95,7 +111,7 @@ func (ctrl TelegramController) verifyChatID(chatID int64) bool {
 	return false
 }
 
-func (ctrl TelegramController) oldMessage(timestamp int) bool {
+func oldMessage(timestamp int) bool {
 	const waitTime = 2
 
 	msgTime := time.Unix(int64(timestamp), 0)
