@@ -3,7 +3,7 @@ package telegram
 import (
 	"fmt"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func (ctrl *TelegramController) HandleDocument(msg *tgbotapi.Message) error {

@@ -8,7 +8,7 @@ import (
 	"go-bot/internal/app/transmission"
 	HTTP "go-bot/internal/app/transport/http"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Commander interface {
@@ -50,15 +50,11 @@ func NewTelegramController(
 }
 
 func (ctrl TelegramController) EventLoop() error {
-	updates, err := ctrl.bot.GetUpdatesChan(tgbotapi.UpdateConfig{
+	updates := ctrl.bot.GetUpdatesChan(tgbotapi.UpdateConfig{
 		Offset:  0,
 		Limit:   0,
 		Timeout: 60,
 	})
-	if err != nil {
-		ctrl.logger.Errorf("Cannot get update channel: %s", err)
-		return err
-	}
 
 	for update := range updates {
 		if update.Message == nil {
