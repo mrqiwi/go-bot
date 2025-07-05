@@ -5,9 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"go-bot/internal/app/transmission"
-	HTTP "go-bot/internal/app/transport/http"
-
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -17,12 +14,10 @@ type Commander interface {
 }
 
 type TelegramController struct {
-	settings    Settings
-	logger      *zap.SugaredLogger
-	bot         *tgbotapi.BotAPI
-	commander   Commander
-	httpClient  HTTP.HTTPClient
-	transClient transmission.Transmission
+	settings  Settings
+	logger    *zap.SugaredLogger
+	bot       *tgbotapi.BotAPI
+	commander Commander
 }
 
 type Settings struct {
@@ -36,16 +31,12 @@ func NewTelegramController(
 	logger *zap.SugaredLogger,
 	bot *tgbotapi.BotAPI,
 	commander Commander,
-	httpClient HTTP.HTTPClient,
-	transClient transmission.Transmission,
 ) TelegramController {
 	return TelegramController{
-		settings:    settings,
-		logger:      logger,
-		bot:         bot,
-		commander:   commander,
-		httpClient:  httpClient,
-		transClient: transClient,
+		settings:  settings,
+		logger:    logger,
+		bot:       bot,
+		commander: commander,
 	}
 }
 
@@ -77,14 +68,6 @@ func (ctrl TelegramController) EventLoop() error {
 }
 
 func (ctrl TelegramController) HandleMessage(msg *tgbotapi.Message) {
-	if msg.Document != nil {
-		err := ctrl.HandleDocument(msg)
-		if err != nil {
-			ctrl.logger.Errorf("Handle document: %s", err)
-			return
-		}
-	}
-
 	if msg.Text != "" {
 		ctrl.HandleText(strings.ToLower(msg.Text), msg.Chat.ID)
 		return

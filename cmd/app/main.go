@@ -5,8 +5,6 @@ import (
 
 	"go-bot/internal/app/appconfig"
 	"go-bot/internal/app/logging"
-	"go-bot/internal/app/transmission"
-	HTTP "go-bot/internal/app/transport/http"
 	"go-bot/internal/app/transport/telegram"
 	"go-bot/internal/app/usecase"
 )
@@ -27,21 +25,16 @@ func main() {
 		logger.Fatalf("cannot init telegram api: %s", err)
 	}
 
-	transClient := transmission.TranmissionClient()
-	httpClient := HTTP.NewHTTPClient()
 	commands := usecase.NewCommandProvider()
 	//_ = vk.NewVkController(logger, api.NewVK(config.VKToken), commands)
 	teleController := telegram.NewTelegramController(
 		telegram.Settings{
-			Token:        config.TelegramToken,
-			DownloadPath: config.DownloadsPath,
-			ChatIDs:      config.ChatIDs,
+			Token:   config.TelegramToken,
+			ChatIDs: config.ChatIDs,
 		},
 		logger,
 		teleBot,
 		commands,
-		httpClient,
-		transClient,
 	)
 
 	errChannel := make(chan error)
