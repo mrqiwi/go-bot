@@ -8,8 +8,10 @@ import (
 )
 
 type Commander interface {
-	Reboot() error
-	Poweroff() error
+	PcReboot() error
+	PcOn() error
+	PcOff() error
+	PcStatus() error
 }
 
 type TelegramController struct {
@@ -20,9 +22,8 @@ type TelegramController struct {
 }
 
 type Settings struct {
-	Token        string
-	DownloadPath string
-	ChatIDs      []int64
+	Token   string
+	ChatIDs []int64
 }
 
 func NewTelegramController(
@@ -44,7 +45,7 @@ func (ctrl TelegramController) EventLoop() error {
 		{Command: "start", Description: "Запустить меню"},
 		{Command: "pc_on", Description: "Включить ПК"},
 		{Command: "pc_off", Description: "Выключить ПК"},
-		{Command: "pc_reboot", Description: "Пеерезагрузить ПК"},
+		{Command: "pc_reboot", Description: "Перезагрузить ПК"},
 		{Command: "pc_status", Description: "Узнать статус ПК"},
 	}
 	_, err := ctrl.bot.Request(tgbotapi.NewSetMyCommands(commands...))
@@ -96,16 +97,36 @@ func (ctrl TelegramController) handleCommand(msg *tgbotapi.Message, menu tgbotap
 		ctrl.sendMessageWithMenu(menu, msg.Chat.ID, "Привет! Выбери команду с клавиатуры ниже:")
 
 	case "pc_on":
-		ctrl.sendMessage(msg.Chat.ID, "ПК включается…")
+		err := ctrl.commander.PcOn()
+		if err != nil {
+			ctrl.sendMessage(msg.Chat.ID, "ПК невозможно включить")
+		} else {
+			ctrl.sendMessage(msg.Chat.ID, "ПК включается…")
+		}
 
 	case "pc_off":
-		ctrl.sendMessage(msg.Chat.ID, "ПК выключается…")
+		err := ctrl.commander.PcOff()
+		if err != nil {
+			ctrl.sendMessage(msg.Chat.ID, "ПК невозможно выключить")
+		} else {
+			ctrl.sendMessage(msg.Chat.ID, "ПК выключается…")
+		}
 
 	case "pc_reboot":
-		ctrl.sendMessage(msg.Chat.ID, "ПК перезагружается…")
+		err := ctrl.commander.PcReboot()
+		if err != nil {
+			ctrl.sendMessage(msg.Chat.ID, "ПК невозможнжо перезагрузить")
+		} else {
+			ctrl.sendMessage(msg.Chat.ID, "ПК перезагружается…")
+		}
 
 	case "pc_status":
-		ctrl.sendMessage(msg.Chat.ID, "ПК в неизвестном состоянии…")
+		err := ctrl.commander.PcStatus()
+		if err != nil {
+			ctrl.sendMessage(msg.Chat.ID, "ПК выключен")
+		} else {
+			ctrl.sendMessage(msg.Chat.ID, "ПК включен")
+		}
 
 	case "help":
 		ctrl.sendMessage(msg.Chat.ID, "Используй команды:\n/pc_on\n/pc_off\n/pc_reboot\n/pc_status")
@@ -123,6 +144,7 @@ func (ctrl TelegramController) sendMessage(chatID int64, text string) {
 		ctrl.logger.Errorf("Cannot send message: %s", err)
 	}
 }
+
 func (ctrl TelegramController) sendMessageWithMenu(menu tgbotapi.ReplyKeyboardMarkup, chatID int64, text string) {
 	msg := tgbotapi.NewMessage(chatID, text)
 

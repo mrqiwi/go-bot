@@ -25,7 +25,13 @@ func main() {
 		logger.Fatalf("cannot init telegram api: %s", err)
 	}
 
-	commands := usecase.NewCommandProvider()
+	commands := usecase.NewCommandProvider(
+		config.PCAddress,
+		config.UserName,
+		config.UserPassword,
+		config.MacAddress,
+		config.BroadcastAddress,
+	)
 	//_ = vk.NewVkController(logger, api.NewVK(config.VKToken), commands)
 	teleController := telegram.NewTelegramController(
 		telegram.Settings{
