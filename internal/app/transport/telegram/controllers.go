@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"go.uber.org/zap"
-	"strings"
 	"time"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -41,6 +40,30 @@ func NewTelegramController(
 }
 
 func (ctrl TelegramController) EventLoop() error {
+	commands := []tgbotapi.BotCommand{
+		{Command: "start", Description: "Запустить меню"},
+		{Command: "pc_on", Description: "Включить ПК"},
+		{Command: "pc_off", Description: "Выключить ПК"},
+		{Command: "pc_reboot", Description: "Пеерезагрузить ПК"},
+		{Command: "pc_status", Description: "Узнать статус ПК"},
+	}
+	_, err := ctrl.bot.Request(tgbotapi.NewSetMyCommands(commands...))
+	if err != nil {
+		ctrl.logger.Errorf("Cannot requst commands: %s", err)
+	}
+
+	menu := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("/pc_on"),
+			tgbotapi.NewKeyboardButton("/pc_off"),
+			tgbotapi.NewKeyboardButton("/pc_reboot"),
+			tgbotapi.NewKeyboardButton("/pc_status"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("/help"),
+		),
+	)
+
 	updates := ctrl.bot.GetUpdatesChan(tgbotapi.UpdateConfig{
 		Offset:  0,
 		Limit:   0,
@@ -61,22 +84,49 @@ func (ctrl TelegramController) EventLoop() error {
 			continue
 		}
 
-		ctrl.HandleMessage(update.Message)
+		ctrl.handleCommand(update.Message, menu)
 	}
 
 	return nil
 }
 
-func (ctrl TelegramController) HandleMessage(msg *tgbotapi.Message) {
-	if msg.Text != "" {
-		ctrl.HandleText(strings.ToLower(msg.Text), msg.Chat.ID)
-		return
+func (ctrl TelegramController) handleCommand(msg *tgbotapi.Message, menu tgbotapi.ReplyKeyboardMarkup) {
+	switch msg.Command() {
+	case "start":
+		ctrl.sendMessageWithMenu(menu, msg.Chat.ID, "Привет! Выбери команду с клавиатуры ниже:")
+
+	case "pc_on":
+		ctrl.sendMessage(msg.Chat.ID, "ПК включается…")
+
+	case "pc_off":
+		ctrl.sendMessage(msg.Chat.ID, "ПК выключается…")
+
+	case "pc_reboot":
+		ctrl.sendMessage(msg.Chat.ID, "ПК перезагружается…")
+
+	case "pc_status":
+		ctrl.sendMessage(msg.Chat.ID, "ПК в неизвестном состоянии…")
+
+	case "help":
+		ctrl.sendMessage(msg.Chat.ID, "Используй команды:\n/pc_on\n/pc_off\n/pc_reboot\n/pc_status")
+
+	default:
+		ctrl.sendMessage(msg.Chat.ID, "Неизвестная команда. Нажми /start, чтобы открыть меню.")
 	}
 }
 
-func (ctrl *TelegramController) SendMessage(chatID int64, text string) {
+func (ctrl TelegramController) sendMessage(chatID int64, text string) {
 	msg := tgbotapi.NewMessage(chatID, text)
 
+	_, err := ctrl.bot.Send(msg)
+	if err != nil {
+		ctrl.logger.Errorf("Cannot send message: %s", err)
+	}
+}
+func (ctrl TelegramController) sendMessageWithMenu(menu tgbotapi.ReplyKeyboardMarkup, chatID int64, text string) {
+	msg := tgbotapi.NewMessage(chatID, text)
+
+	msg.ReplyMarkup = menu
 	_, err := ctrl.bot.Send(msg)
 	if err != nil {
 		ctrl.logger.Errorf("Cannot send message: %s", err)
